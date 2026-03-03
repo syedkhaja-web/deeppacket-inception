@@ -65,20 +65,19 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/dpi-spring-server:latest
             ghcr.io/${{ github.repository_owner }}/dpi-spring-server:${{ github.sha }}
 
-  # deploy to railway - needs RAILWAY_TOKEN secret set in github repo settings
-  deploy-railway:
-    name: deploy to railway
+  # deploy to render - needs RENDER_DEPLOY_HOOK_URL secret set in github repo settings
+  deploy-render:
+    name: deploy to render
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: install railway cli
-        run: npm install -g @railway/cli
-
-      - name: ship it
-        run: railway up --detach
+      - name: trigger render deploy
+        run: |
+          curl -s -X POST "$RENDER_DEPLOY_HOOK_URL" \
+            -H "Content-Type: application/json" \
+            | cat
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}  # add this in github → settings → secrets
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}  # add in github → settings → secrets
+

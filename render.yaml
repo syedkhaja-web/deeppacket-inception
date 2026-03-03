@@ -1,0 +1,19 @@
+# Render Blueprint - tells Render how to build and run the service
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: dpi-spring-server
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free          # free tier: 512 MB RAM, spins down after 15 min inactivity
+    region: oregon      # closest free region
+
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: JAVA_OPTS
+        value: "-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
+
+    healthCheckPath: /actuator/health
