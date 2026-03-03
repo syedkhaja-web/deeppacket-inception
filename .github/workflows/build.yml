@@ -1,0 +1,84 @@
+name: build and deploy
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+
+  # compile the thing and make sure it doesnt explode
+  build:
+    name: build jar
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set up java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven  # cache deps so we dont download spring boot every time
+
+      - name: build it
+        working-directory: dpi-spring-server
+        run: mvn clean package -DskipTests --no-transfer-progress
+
+      - name: save the jar so other jobs can use it
+        uses: actions/upload-artifact@v4
+        with:
+          name: dpi-spring-server-jar
+          path: dpi-spring-server/target/dpi-spring-server-1.0.0.jar
+
+  # build docker image and push to github container registry
+  # only runs on main, not on PRs
+  docker:
+    name: push docker image
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: log in to ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}  # github gives us this for free
+
+      - name: build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/dpi-spring-server:latest
+            ghcr.io/${{ github.repository_owner }}/dpi-spring-server:${{ github.sha }}
+
+  # deploy to railway - needs RAILWAY_TOKEN secret set in github repo settings
+  deploy-railway:
+    name: deploy to railway
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install railway cli
+        run: npm install -g @railway/cli
+
+      - name: ship it
+        run: railway up --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}  # add this in github → settings → secrets

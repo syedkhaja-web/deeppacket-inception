@@ -1,0 +1,30 @@
+# simple local deployment
+# just run: docker-compose up --build
+# server will be at http://localhost:8080
+
+version: '3.8'
+
+services:
+  dpi-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dpi-ai-server
+    ports:
+      - "8080:8080"
+    environment:
+      # tweak these if you want different defaults
+      - SERVER_PORT=8080
+      - DPI_ML_ANOMALY_THRESHOLD=0.55
+      - DPI_ML_ISOLATION_FOREST_TREES=200
+      - DPI_RULES_BLOCKED_DOMAINS=malware.com,ads.example.com
+    volumes:
+      # drop pcap files here and reference them in the api
+      - ./pcap-data:/app/pcap
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s  # give spring boot time to start

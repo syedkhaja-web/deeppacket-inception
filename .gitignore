@@ -1,0 +1,20 @@
+# build output
+target/
+*.class
+*.jar
+
+# temp files
+*.pcap
+pcap-data/
+
+# scripts with secrets - never commit these
+push.bat
+fix_missing.ps1
+upload_to_github.ps1
+install_maven.ps1
+push_token.ps1
+deploy.ps1
+push.ps1
+upload_ai_files.ps1
+upload_workflow.ps1
+push_workflow.ps1

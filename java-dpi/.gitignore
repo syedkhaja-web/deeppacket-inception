@@ -1,0 +1,17 @@
+# Compiled Java classes
+out/
+*.class
+
+# PCAP files (generated at runtime, not source code)
+*.pcap
+
+# Temporary build files
+sources.txt
+test_placeholder.txt
+
+# VS Code settings (optional - you can remove this if you want to keep them)
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
